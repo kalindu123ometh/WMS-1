@@ -22,8 +22,37 @@ public class AdminRegistrationService {
     @Autowired
     private UserRepository userRepository;
 
+    private static final java.util.regex.Pattern EMAIL_PATTERN =
+        java.util.regex.Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final java.util.regex.Pattern PHONE_PATTERN =
+        java.util.regex.Pattern.compile("^[+]?[0-9\\s\\-().]{7,20}$");
+
     /** Submit a new registration request */
     public AdminRegistrationRequest submitRequest(AdminRegistrationRequest req) {
+        // Field-level validation
+        if (req.getFullName() == null || req.getFullName().trim().isEmpty()) {
+            throw new RuntimeException("Full name is required.");
+        }
+        if (req.getUsername() == null || req.getUsername().trim().isEmpty()) {
+            throw new RuntimeException("Username is required.");
+        }
+        if (req.getUsername().trim().length() < 3) {
+            throw new RuntimeException("Username must be at least 3 characters.");
+        }
+        if (req.getEmail() == null || req.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email address is required.");
+        }
+        if (!EMAIL_PATTERN.matcher(req.getEmail().trim()).matches()) {
+            throw new RuntimeException("Please enter a valid email address.");
+        }
+        if (req.getPassword() == null || req.getPassword().length() < 6) {
+            throw new RuntimeException("Password must be at least 6 characters.");
+        }
+        if (req.getPhone() != null && !req.getPhone().trim().isEmpty()) {
+            if (!PHONE_PATTERN.matcher(req.getPhone().trim()).matches()) {
+                throw new RuntimeException("Please enter a valid phone number (7-20 digits).");
+            }
+        }
         // Check against pending/existing requests
         if (requestRepo.existsByUsername(req.getUsername())) {
             throw new RuntimeException("A request with this username already exists.");

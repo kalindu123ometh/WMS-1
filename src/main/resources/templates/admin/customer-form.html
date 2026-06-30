@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <title th:text="${formTitle}">Edit Customer – WMS Admin</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .field-error { color:#e74c3c; font-size:0.76rem; margin-top:4px; display:none; font-weight:500; }
+        .field-error.show { display:block; }
+        input.invalid { border-color:#e74c3c !important; background:rgba(231,76,60,0.04) !important; }
+        input.valid   { border-color:#27ae60 !important; }
+        .pw-strength-bar { height:4px; border-radius:4px; background:#eee; overflow:hidden; margin-top:6px; display:none; }
+        .pw-strength-fill { height:100%; border-radius:4px; transition:width 0.3s,background 0.3s; width:0%; }
+        .pw-strength-label { font-size:0.72rem; margin-top:3px; font-weight:600; display:none; }
+    </style>
 </head>
 <body>
 <div class="sidebar">
@@ -28,32 +37,49 @@
     </div>
 
     <div class="form-container">
-        <form th:action="${formAction}" method="post">
+        <form th:action="${formAction}" method="post" id="customerForm" novalidate>
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="firstName">First Name</label>
-                    <input type="text" id="firstName" name="firstName" th:value="${customer.firstName}" required>
+                    <label for="firstName">First Name *</label>
+                    <input type="text" id="firstName" name="firstName" th:value="${customer.firstName}"
+                           placeholder="First name" oninput="validateRequired('firstName','firstNameErr')">
+                    <div class="field-error" id="firstNameErr">First name is required.</div>
                 </div>
                 <div class="form-group">
-                    <label for="lastName">Last Name</label>
-                    <input type="text" id="lastName" name="lastName" th:value="${customer.lastName}" required>
+                    <label for="lastName">Last Name *</label>
+                    <input type="text" id="lastName" name="lastName" th:value="${customer.lastName}"
+                           placeholder="Last name" oninput="validateRequired('lastName','lastNameErr')">
+                    <div class="field-error" id="lastNameErr">Last name is required.</div>
                 </div>
                 <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" th:value="${customer.email}" required>
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" th:value="${customer.email}"
+                           placeholder="Email address" oninput="validateEmail()">
+                    <div class="field-error" id="emailErr">Please enter a valid email address.</div>
                 </div>
                 <div class="form-group">
                     <label for="phone">Phone Number</label>
-                    <input type="text" id="phone" name="phone" th:value="${customer.phone}">
+                    <input type="text" id="phone" name="phone" th:value="${customer.phone}"
+                           placeholder="+94 77 xxx xxxx" oninput="validatePhone()">
+                    <div class="field-error" id="phoneErr">Please enter a valid phone number (7–20 digits).</div>
                 </div>
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label for="address">Address</label>
-                    <textarea id="address" name="address" th:text="${customer.address}"></textarea>
+                    <textarea id="address" name="address" th:text="${customer.address}" placeholder="Customer address"></textarea>
                 </div>
-
                 <div class="form-group" style="grid-column: 1 / -1;">
-                    <label for="password">Change Password (leave blank to keep current)</label>
-                    <input type="password" id="password" name="password" placeholder="New Password">
+                    <label for="password">Change Password <span style="font-weight:400;font-size:0.8rem;color:#999;">(leave blank to keep current)</span></label>
+                    <div style="position:relative;">
+                        <input type="password" id="password" name="password" placeholder="New password (min 6 chars)"
+                               oninput="checkPwStrength(this.value)" style="padding-right:44px;">
+                        <button type="button" onclick="togglePw()" tabindex="-1"
+                                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#aaa;">
+                            <span id="pwEye">👁️</span>
+                        </button>
+                    </div>
+                    <div class="pw-strength-bar" id="pwBar"><div class="pw-strength-fill" id="pwFill"></div></div>
+                    <div class="pw-strength-label" id="pwLabel"></div>
+                    <div class="field-error" id="passwordErr">Password must be at least 6 characters.</div>
                 </div>
             </div>
 
@@ -64,5 +90,61 @@
         </form>
     </div>
 </div>
+
+<script>
+const EMAIL_RE = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const PHONE_RE = /^[+]?[0-9\s\-().]{7,20}$/;
+
+function showErr(id) { document.getElementById(id).classList.add('show'); }
+function hideErr(id) { document.getElementById(id).classList.remove('show'); }
+function markInvalid(id) { const el = document.getElementById(id); el.classList.remove('valid'); el.classList.add('invalid'); }
+function markValid(id)   { const el = document.getElementById(id); el.classList.remove('invalid'); el.classList.add('valid'); }
+
+function validateRequired(inputId, errId) {
+    const v = document.getElementById(inputId).value.trim();
+    if (!v) { markInvalid(inputId); showErr(errId); }
+    else    { markValid(inputId);   hideErr(errId); }
+}
+function validateEmail() {
+    const v = document.getElementById('email').value.trim();
+    if (!v || !EMAIL_RE.test(v)) { markInvalid('email'); showErr('emailErr'); }
+    else                         { markValid('email');   hideErr('emailErr'); }
+}
+function validatePhone() {
+    const v = document.getElementById('phone').value.trim();
+    if (v && !PHONE_RE.test(v)) { markInvalid('phone'); showErr('phoneErr'); }
+    else                        { markValid('phone');   hideErr('phoneErr'); }
+}
+function togglePw() {
+    const inp = document.getElementById('password'), eye = document.getElementById('pwEye');
+    if (inp.type === 'password') { inp.type = 'text'; eye.textContent = '🙈'; }
+    else                         { inp.type = 'password'; eye.textContent = '👁️'; }
+}
+function checkPwStrength(pwd) {
+    const bar = document.getElementById('pwBar'), fill = document.getElementById('pwFill'), lbl = document.getElementById('pwLabel');
+    if (!pwd) { bar.style.display='none'; lbl.style.display='none'; hideErr('passwordErr'); return; }
+    bar.style.display='block'; lbl.style.display='block';
+    if (pwd.length < 6) { markInvalid('password'); showErr('passwordErr'); }
+    else                { markValid('password');   hideErr('passwordErr'); }
+    let s=0;
+    if (pwd.length>=8) s++; if (/[A-Z]/.test(pwd)) s++; if (/[a-z]/.test(pwd)) s++;
+    if (/[0-9]/.test(pwd)) s++; if (/[^A-Za-z0-9]/.test(pwd)) s++;
+    const lvls=[{w:'20%',bg:'#e74c3c',t:'Weak'},{w:'40%',bg:'#e67e22',t:'Fair'},{w:'60%',bg:'#f1c40f',t:'Good'},{w:'80%',bg:'#2ecc71',t:'Strong'},{w:'100%',bg:'#1abc9c',t:'Very Strong'}];
+    const lvl=lvls[Math.max(s-1,0)]; fill.style.width=lvl.w; fill.style.background=lvl.bg; lbl.textContent=lvl.t; lbl.style.color=lvl.bg;
+}
+
+document.getElementById('customerForm').addEventListener('submit', function(e) {
+    let ok = true;
+    if (!document.getElementById('firstName').value.trim()) { markInvalid('firstName'); showErr('firstNameErr'); ok=false; }
+    if (!document.getElementById('lastName').value.trim())  { markInvalid('lastName');  showErr('lastNameErr');  ok=false; }
+    const email = document.getElementById('email').value.trim();
+    if (!email || !EMAIL_RE.test(email)) { markInvalid('email'); showErr('emailErr'); ok=false; }
+    const phone = document.getElementById('phone').value.trim();
+    if (phone && !PHONE_RE.test(phone)) { markInvalid('phone'); showErr('phoneErr'); ok=false; }
+    const pwd = document.getElementById('password').value;
+    if (pwd && pwd.length < 6) { markInvalid('password'); showErr('passwordErr'); ok=false; }
+    if (!ok) e.preventDefault();
+});
+</script>
 </body>
 </html>

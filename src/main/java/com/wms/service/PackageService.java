@@ -28,11 +28,28 @@ public class PackageService {
         return packageRepository.findById(id);
     }
 
+    private void validatePackage(WeddingPackage pkg) {
+        if (pkg.getName() == null || pkg.getName().trim().isEmpty()) {
+            throw new RuntimeException("Package name is required.");
+        }
+        if (pkg.getPrice() == null) {
+            throw new RuntimeException("Package price is required.");
+        }
+        if (pkg.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Package price must be a positive amount.");
+        }
+        if (pkg.getMaxGuests() != null && pkg.getMaxGuests() <= 0) {
+            throw new RuntimeException("Max guests must be a positive number.");
+        }
+    }
+
     public WeddingPackage addPackage(WeddingPackage weddingPackage) {
+        validatePackage(weddingPackage);
         return packageRepository.save(weddingPackage);
     }
 
     public WeddingPackage updatePackage(Long id, WeddingPackage updatedPackage) {
+        validatePackage(updatedPackage);
         WeddingPackage existing = packageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Package not found with id: " + id));
         existing.setName(updatedPackage.getName());

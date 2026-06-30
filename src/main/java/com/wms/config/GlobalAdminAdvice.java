@@ -8,11 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-/**
- * 🛠️ Global Controller Advice
- * Ensures sidebar data (like Pending Admin Requests and Super Admin status)
- * is available to all Admin controllers without manually adding it to every method.
- */
+
 @ControllerAdvice(basePackages = "com.wms.controller")
 public class GlobalAdminAdvice {
 

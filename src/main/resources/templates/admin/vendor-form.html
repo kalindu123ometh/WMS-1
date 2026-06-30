@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <title th:text="${formTitle} + ' – WMS Admin'">Vendor Form</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .field-error { color:#e74c3c; font-size:0.76rem; margin-top:4px; display:none; font-weight:500; }
+        .field-error.show { display:block; }
+        input.invalid, select.invalid { border-color:#e74c3c !important; background:rgba(231,76,60,0.04) !important; }
+        input.valid, select.valid { border-color:#27ae60 !important; }
+    </style>
 </head>
 <body>
 <div class="sidebar">
@@ -27,15 +33,17 @@
     </div>
     <div class="section-card">
         <div class="form-container">
-            <form th:action="${formAction}" th:object="${vendor}" method="post">
+            <form th:action="${formAction}" th:object="${vendor}" method="post" id="vendorForm" novalidate>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Vendor Name *</label>
-                        <input type="text" th:field="*{name}" placeholder="Business name" required>
+                        <input type="text" id="vendorName" th:field="*{name}" placeholder="Business name"
+                               oninput="validateRequired('vendorName','vendorNameErr')">
+                        <div class="field-error" id="vendorNameErr">Vendor name is required.</div>
                     </div>
                     <div class="form-group">
                         <label>Category *</label>
-                        <select th:field="*{category}" required>
+                        <select id="category" th:field="*{category}" onchange="validateCategory()">
                             <option value="">-- Select Category --</option>
                             <option value="Photography">Photography</option>
                             <option value="Catering">Catering</option>
@@ -46,14 +54,19 @@
                             <option value="Transport">Transport</option>
                             <option value="Other">Other</option>
                         </select>
+                        <div class="field-error" id="categoryErr">Please select a category.</div>
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" th:field="*{email}" placeholder="vendor@example.com">
+                        <input type="email" id="vendorEmail" th:field="*{email}" placeholder="vendor@example.com"
+                               oninput="validateEmail()">
+                        <div class="field-error" id="vendorEmailErr">Please enter a valid email address.</div>
                     </div>
                     <div class="form-group">
                         <label>Phone</label>
-                        <input type="tel" th:field="*{phone}" placeholder="+94 77 xxx xxxx">
+                        <input type="tel" id="vendorPhone" th:field="*{phone}" placeholder="+94 77 xxx xxxx"
+                               oninput="validatePhone()">
+                        <div class="field-error" id="vendorPhoneErr">Please enter a valid phone number (7–20 digits).</div>
                     </div>
                     <div class="form-group">
                         <label>Pricing Tier</label>
@@ -88,5 +101,46 @@
         </div>
     </div>
 </div>
+<script>
+const EMAIL_RE = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const PHONE_RE = /^[+]?[0-9\s\-().]{7,20}$/;
+
+function showErr(id) { document.getElementById(id).classList.add('show'); }
+function hideErr(id) { document.getElementById(id).classList.remove('show'); }
+function markInvalid(id) { const el=document.getElementById(id); el.classList.remove('valid'); el.classList.add('invalid'); }
+function markValid(id)   { const el=document.getElementById(id); el.classList.remove('invalid'); el.classList.add('valid'); }
+
+function validateRequired(inputId, errId) {
+    const v = document.getElementById(inputId).value.trim();
+    if (!v) { markInvalid(inputId); showErr(errId); }
+    else    { markValid(inputId);   hideErr(errId); }
+}
+function validateCategory() {
+    const v = document.getElementById('category').value;
+    if (!v) { markInvalid('category'); showErr('categoryErr'); }
+    else    { markValid('category');   hideErr('categoryErr'); }
+}
+function validateEmail() {
+    const v = document.getElementById('vendorEmail').value.trim();
+    if (v && !EMAIL_RE.test(v)) { markInvalid('vendorEmail'); showErr('vendorEmailErr'); }
+    else                        { markValid('vendorEmail');   hideErr('vendorEmailErr'); }
+}
+function validatePhone() {
+    const v = document.getElementById('vendorPhone').value.trim();
+    if (v && !PHONE_RE.test(v)) { markInvalid('vendorPhone'); showErr('vendorPhoneErr'); }
+    else                        { markValid('vendorPhone');   hideErr('vendorPhoneErr'); }
+}
+
+document.getElementById('vendorForm').addEventListener('submit', function(e) {
+    let ok = true;
+    if (!document.getElementById('vendorName').value.trim()) { markInvalid('vendorName'); showErr('vendorNameErr'); ok=false; }
+    if (!document.getElementById('category').value)          { markInvalid('category');   showErr('categoryErr');   ok=false; }
+    const email = document.getElementById('vendorEmail').value.trim();
+    if (email && !EMAIL_RE.test(email)) { markInvalid('vendorEmail'); showErr('vendorEmailErr'); ok=false; }
+    const phone = document.getElementById('vendorPhone').value.trim();
+    if (phone && !PHONE_RE.test(phone)) { markInvalid('vendorPhone'); showErr('vendorPhoneErr'); ok=false; }
+    if (!ok) e.preventDefault();
+});
+</script>
 </body>
 </html>

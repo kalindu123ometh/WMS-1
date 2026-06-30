@@ -160,6 +160,10 @@
             font-weight: 500;
         }
         .upload-status.error { color: #e74c3c; }
+        .field-error { color:#e74c3c; font-size:0.76rem; margin-top:4px; display:none; font-weight:500; }
+        .field-error.show { display:block; }
+        input.invalid { border-color:#e74c3c !important; background:rgba(231,76,60,0.04) !important; }
+        input.valid   { border-color:#27ae60 !important; }
     </style>
 </head>
 <body>
@@ -184,7 +188,7 @@
     </div>
     <div class="section-card">
         <div class="form-container">
-            <form th:action="${formAction}" th:object="${pkg}" method="post" id="pkgForm">
+            <form th:action="${formAction}" th:object="${pkg}" method="post" id="pkgForm" novalidate>
                 <!-- hidden field carries the comma-separated image URL list -->
                 <input type="hidden" id="imageUrlsInput" name="imageUrls"
                        th:value="${pkg.imageUrls}">
@@ -192,11 +196,15 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Package Name *</label>
-                        <input type="text" th:field="*{name}" placeholder="e.g. Royal Gold Package" required>
+                        <input type="text" id="pkgName" th:field="*{name}" placeholder="e.g. Royal Gold Package"
+                               oninput="validateRequired('pkgName','pkgNameErr')">
+                        <div class="field-error" id="pkgNameErr">Package name is required.</div>
                     </div>
                     <div class="form-group">
                         <label>Price (LKR) *</label>
-                        <input type="number" step="0.01" th:field="*{price}" placeholder="e.g. 250000.00" required>
+                        <input type="number" step="0.01" id="pkgPrice" th:field="*{price}" placeholder="e.g. 250000.00"
+                               oninput="validatePrice()">
+                        <div class="field-error" id="pkgPriceErr">Price must be a positive amount.</div>
                     </div>
                     <div class="form-group">
                         <label>Duration</label>
@@ -204,7 +212,9 @@
                     </div>
                     <div class="form-group">
                         <label>Max Guests</label>
-                        <input type="number" th:field="*{maxGuests}" placeholder="e.g. 200">
+                        <input type="number" id="maxGuests" th:field="*{maxGuests}" placeholder="e.g. 200"
+                               oninput="validateMaxGuests()">
+                        <div class="field-error" id="maxGuestsErr">Max guests must be a positive number.</div>
                     </div>
                     <div class="form-group">
                         <label>Location</label>
@@ -430,6 +440,38 @@
         if (!isError) setTimeout(() => { if (statusEl.textContent === msg) statusEl.textContent = ''; }, 3500);
     }
 })();
+
+/* ── Package form validation ─────────────────────────────────── */
+function showErr(id) { document.getElementById(id).classList.add('show'); }
+function hideErr(id) { document.getElementById(id).classList.remove('show'); }
+function markInvalid(id) { const el=document.getElementById(id); if(el){el.classList.remove('valid'); el.classList.add('invalid');} }
+function markValid(id)   { const el=document.getElementById(id); if(el){el.classList.remove('invalid'); el.classList.add('valid');} }
+
+function validateRequired(inputId, errId) {
+    const v = document.getElementById(inputId).value.trim();
+    if (!v) { markInvalid(inputId); showErr(errId); }
+    else    { markValid(inputId);   hideErr(errId); }
+}
+function validatePrice() {
+    const v = parseFloat(document.getElementById('pkgPrice').value);
+    if (!v || v <= 0) { markInvalid('pkgPrice'); showErr('pkgPriceErr'); }
+    else              { markValid('pkgPrice');   hideErr('pkgPriceErr'); }
+}
+function validateMaxGuests() {
+    const v = parseInt(document.getElementById('maxGuests').value);
+    if (document.getElementById('maxGuests').value && v <= 0) { markInvalid('maxGuests'); showErr('maxGuestsErr'); }
+    else { markValid('maxGuests'); hideErr('maxGuestsErr'); }
+}
+
+document.getElementById('pkgForm').addEventListener('submit', function(e) {
+    let ok = true;
+    if (!document.getElementById('pkgName').value.trim()) { markInvalid('pkgName'); showErr('pkgNameErr'); ok=false; }
+    const price = parseFloat(document.getElementById('pkgPrice').value);
+    if (!price || price <= 0) { markInvalid('pkgPrice'); showErr('pkgPriceErr'); ok=false; }
+    const mg = document.getElementById('maxGuests').value;
+    if (mg && parseInt(mg) <= 0) { markInvalid('maxGuests'); showErr('maxGuestsErr'); ok=false; }
+    if (!ok) e.preventDefault();
+});
 </script>
 </body>
 </html>

@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <title>My Profile – Wedding Management System</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .field-error { color:#e74c3c; font-size:0.75rem; margin-top:4px; display:none; font-weight:500; }
+        .field-error.show { display:block; }
+        input.invalid { border-color:#e74c3c !important; background:rgba(231,76,60,0.04) !important; }
+        input.valid   { border-color:#27ae60 !important; }
+    </style>
 </head>
 <body>
 <div class="sidebar" style="background: linear-gradient(180deg, #880E4F 0%, #4A148C 100%);">
@@ -75,16 +81,20 @@
                 </p>
             </div>
         </div>
-        <form action="/customer/profile/update" method="post" enctype="multipart/form-data">
+        <form action="/customer/profile/update" method="post" enctype="multipart/form-data" id="custProfileForm" novalidate>
             <input type="file" id="customerProfilePic" name="profilePicFile" accept="image/*" style="display:none;">
             <div class="form-grid">
                 <div class="form-group">
                     <label>First Name *</label>
-                    <input type="text" name="firstName" th:value="${customer.firstName}" required>
+                    <input type="text" name="firstName" id="custFirstName" th:value="${customer.firstName}"
+                           oninput="validateRequired('custFirstName','firstNameErr')" required>
+                    <div class="field-error" id="firstNameErr">First name is required.</div>
                 </div>
                 <div class="form-group">
                     <label>Last Name *</label>
-                    <input type="text" name="lastName" th:value="${customer.lastName}" required>
+                    <input type="text" name="lastName" id="custLastName" th:value="${customer.lastName}"
+                           oninput="validateRequired('custLastName','lastNameErr')" required>
+                    <div class="field-error" id="lastNameErr">Last name is required.</div>
                 </div>
                 <div class="form-group">
                     <label>Email (read-only)</label>
@@ -92,11 +102,22 @@
                 </div>
                 <div class="form-group">
                     <label>Phone</label>
-                    <input type="tel" name="phone" th:value="${customer.phone}" placeholder="+94 77 xxx xxxx">
+                    <input type="tel" name="phone" id="custPhone" th:value="${customer.phone}" placeholder="+94 77 xxx xxxx"
+                           oninput="validatePhone()">
+                    <div class="field-error" id="phoneErr">Please enter a valid phone number (7–20 digits).</div>
                 </div>
                 <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" name="password" placeholder="Leave blank to keep current">
+                    <label>New Password <span style="font-weight:400;font-size:0.8rem;color:#999;">(leave blank to keep current)</span></label>
+                    <div style="position:relative;">
+                        <input type="password" name="password" id="custPassword"
+                               placeholder="Leave blank to keep current" oninput="validatePassword()"
+                               style="padding-right:44px;">
+                        <button type="button" onclick="togglePw()" tabindex="-1"
+                                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#aaa;">
+                            <span id="custPwEye">👁️</span>
+                        </button>
+                    </div>
+                    <div class="field-error" id="passwordErr">Password must be at least 6 characters.</div>
                 </div>
                 <div class="form-group full-width">
                     <label>Address</label>
@@ -154,4 +175,37 @@
     </div>
 </div>
 </body>
+<script>
+const PHONE_RE = /^[+]?[0-9\s\-().]{7,20}$/;
+function showErr(id){ document.getElementById(id).classList.add('show'); }
+function hideErr(id){ document.getElementById(id).classList.remove('show'); }
+function markInvalid(id){ const el=document.getElementById(id); if(el){el.classList.remove('valid');el.classList.add('invalid');} }
+function markValid(id)  { const el=document.getElementById(id); if(el){el.classList.remove('invalid');el.classList.add('valid');} }
+function validateRequired(inputId, errId){
+    const v=document.getElementById(inputId).value.trim();
+    if(!v){markInvalid(inputId);showErr(errId);}else{markValid(inputId);hideErr(errId);}
+}
+function validatePhone(){
+    const v=document.getElementById('custPhone').value.trim();
+    if(v&&!PHONE_RE.test(v)){markInvalid('custPhone');showErr('phoneErr');}else{markValid('custPhone');hideErr('phoneErr');}
+}
+function validatePassword(){
+    const v=document.getElementById('custPassword').value;
+    if(v&&v.length<6){markInvalid('custPassword');showErr('passwordErr');}else{markValid('custPassword');hideErr('passwordErr');}
+}
+function togglePw(){
+    const inp=document.getElementById('custPassword'),eye=document.getElementById('custPwEye');
+    if(inp.type==='password'){inp.type='text';eye.textContent='🙈';}else{inp.type='password';eye.textContent='👁️';}
+}
+document.getElementById('custProfileForm').addEventListener('submit',function(e){
+    let ok=true;
+    if(!document.getElementById('custFirstName').value.trim()){markInvalid('custFirstName');showErr('firstNameErr');ok=false;}
+    if(!document.getElementById('custLastName').value.trim()) {markInvalid('custLastName'); showErr('lastNameErr'); ok=false;}
+    const ph=document.getElementById('custPhone').value.trim();
+    if(ph&&!PHONE_RE.test(ph)){markInvalid('custPhone');showErr('phoneErr');ok=false;}
+    const pw=document.getElementById('custPassword').value;
+    if(pw&&pw.length<6){markInvalid('custPassword');showErr('passwordErr');ok=false;}
+    if(!ok)e.preventDefault();
+});
+</script>
 </html>

@@ -91,6 +91,9 @@
             vertical-align: middle;
         }
         .autofill-tag.show { display: inline-block; }
+        .field-error { color:#e74c3c; font-size:0.76rem; margin-top:5px; display:none; font-weight:500; }
+        .field-error.show { display:block; }
+        select.invalid, input.invalid { border-color:#e74c3c !important; background:rgba(231,76,60,0.04) !important; }
     </style>
 </head>
 <body>
@@ -132,7 +135,7 @@
     </div>
     <div class="section-card">
         <div class="form-container" style="max-width:800px;">
-            <form th:action="${formAction}" th:object="${booking}" method="post" id="bookingForm">
+            <form th:action="${formAction}" th:object="${booking}" method="post" id="bookingForm" novalidate>
                 <!-- Pass current booking ID for edit-mode: avoids blocking its own date -->
                 <input type="hidden" id="currentBookingId" th:value="${booking.id}">
                 <!-- Preserve payment details during update -->
@@ -141,10 +144,9 @@
 
                 <div class="form-grid">
 
-                    <!-- Customer -->
                     <div class="form-group">
                         <label>Customer *</label>
-                        <select name="customerId" required>
+                        <select id="customerSelect" name="customerId">
                             <option value="">-- Select Customer --</option>
                             <option th:each="c : ${customers}"
                                     th:value="${c.id}"
@@ -152,6 +154,7 @@
                                     th:selected="${booking.customer != null and booking.customer.id == c.id}">
                             </option>
                         </select>
+                        <div class="field-error" id="customerErr">Please select a customer.</div>
                     </div>
 
                     <!-- Package selector -->
@@ -198,7 +201,8 @@
                     <div class="form-group">
                         <label>Event Date *</label>
                         <input type="date" id="eventDate" th:field="*{eventDate}"
-                               required onchange="onDateChange(this.value)">
+                               onchange="onDateChange(this.value)">
+                        <div class="field-error" id="eventDateErr">Please select an event date.</div>
                         <!-- Availability warning -->
                         <div id="dateWarning" style="display:none; margin-top:6px;
                              background:rgba(231,76,60,0.1); border-left:3px solid #e74c3c;
@@ -457,16 +461,47 @@ function onPackageChange(id) {
     loadBookedDates(id);
 }
 
-/* ── Guard: block form submit if date is taken ─────────────────── */
+/* ── Guard: block form submit if required fields missing or date is taken ── */
 document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    let ok = true;
+    // Customer required
+    const custSel = document.getElementById('customerSelect');
+    if (!custSel.value) {
+        custSel.classList.add('invalid');
+        document.getElementById('customerErr').classList.add('show');
+        ok = false;
+    } else {
+        custSel.classList.remove('invalid');
+        document.getElementById('customerErr').classList.remove('show');
+    }
+    // Event date required
+    const dateEl = document.getElementById('eventDate');
+    if (!dateEl.value) {
+        dateEl.classList.add('invalid');
+        document.getElementById('eventDateErr').classList.add('show');
+        ok = false;
+    } else {
+        dateEl.classList.remove('invalid');
+        document.getElementById('eventDateErr').classList.remove('show');
+    }
     if (dateIsBlocked) {
-        e.preventDefault();
+        ok = false;
         document.getElementById('dateWarning').scrollIntoView({behavior:'smooth'});
     }
+    if (!ok) e.preventDefault();
 });
 
-/* ── On page load: trigger for pre-selected package (edit mode) */
+/* ── On page load: trigger for pre-selected package (edit mode) and set min date */
 document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date to today for new bookings
+    var dateEl = document.getElementById('eventDate');
+    if (dateEl && !dateEl.value) {
+        var today = new Date();
+        var yyyy = today.getFullYear();
+        var mm   = String(today.getMonth()+1).padStart(2,'0');
+        var dd   = String(today.getDate()).padStart(2,'0');
+        dateEl.setAttribute('min', yyyy+'-'+mm+'-'+dd);
+    }
     var sel = document.getElementById('packageSelect');
     if (sel && sel.value) {
         onPackageChange(sel.value);

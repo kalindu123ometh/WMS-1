@@ -18,6 +18,9 @@
             animation: titleGlow 2s ease-in-out infinite alternate;
         }
         .login-card p { text-align: center; }
+        .field-error { color:#e74c3c; font-size:0.75rem; margin-top:4px; display:none; font-weight:500; }
+        .field-error.show { display:block; }
+        input.invalid { border-color:#e74c3c !important; background:rgba(231,76,60,0.06) !important; }
     </style>
 </head>
 <body>
@@ -62,14 +65,25 @@
         <div th:if="${errorMsg}"   class="alert alert-danger"><span>⚠️</span><span th:text="${errorMsg}"></span></div>
         <div th:if="${successMsg}" class="alert alert-success"><span>✅</span><span th:text="${successMsg}"></span></div>
 
-        <form action="/customer/login" method="post">
+        <form action="/customer/login" method="post" id="custLoginForm" novalidate>
             <div class="form-group" style="margin-bottom:16px;">
                 <label>Email Address</label>
-                <input type="email" name="email" placeholder="your@email.com" required>
+                <input type="email" name="email" id="loginEmail" placeholder="your@email.com"
+                       oninput="validateEmail()">
+                <div class="field-error" id="emailErr">Please enter a valid email address.</div>
             </div>
             <div class="form-group" style="margin-bottom:22px;">
                 <label>Password</label>
-                <input type="password" name="password" placeholder="Your password" required>
+                <div style="position:relative;">
+                    <input type="password" name="password" id="loginPassword" placeholder="Your password"
+                           oninput="validateRequired('loginPassword','passwordErr')"
+                           style="padding-right:44px;">
+                    <button type="button" onclick="togglePw()" tabindex="-1"
+                            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#aaa;">
+                        <span id="pwEye">👁️</span>
+                    </button>
+                </div>
+                <div class="field-error" id="passwordErr">Password is required.</div>
             </div>
             <button type="submit" class="btn" style="width:100%; justify-content:center;">💒 Sign In</button>
         </form>
@@ -83,4 +97,29 @@
     </div>
 </div>
 </body>
+<script>
+const EMAIL_RE = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+function showErr(id){ document.getElementById(id).classList.add('show'); }
+function hideErr(id){ document.getElementById(id).classList.remove('show'); }
+function markInvalid(id){ const el=document.getElementById(id); if(el){el.classList.remove('valid');el.classList.add('invalid');} }
+function markValid(id)  { const el=document.getElementById(id); if(el){el.classList.remove('invalid');el.classList.add('valid');} }
+function validateRequired(inputId,errId){
+    const v=document.getElementById(inputId).value.trim();
+    if(!v){markInvalid(inputId);showErr(errId);}else{markValid(inputId);hideErr(errId);}
+}
+function validateEmail(){
+    const v=document.getElementById('loginEmail').value.trim();
+    if(!v||!EMAIL_RE.test(v)){markInvalid('loginEmail');showErr('emailErr');}else{markValid('loginEmail');hideErr('emailErr');}
+}
+function togglePw(){
+    const inp=document.getElementById('loginPassword'),eye=document.getElementById('pwEye');
+    if(inp.type==='password'){inp.type='text';eye.textContent='🙈';}else{inp.type='password';eye.textContent='👁️';}
+}
+document.getElementById('custLoginForm').addEventListener('submit',function(e){
+    let ok=true;
+    if(!EMAIL_RE.test(document.getElementById('loginEmail').value.trim())){markInvalid('loginEmail');showErr('emailErr');ok=false;}
+    if(!document.getElementById('loginPassword').value){markInvalid('loginPassword');showErr('passwordErr');ok=false;}
+    if(!ok)e.preventDefault();
+});
+</script>
 </html>

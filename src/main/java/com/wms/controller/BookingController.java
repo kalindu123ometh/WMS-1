@@ -123,7 +123,6 @@ public class BookingController {
      * REST endpoint — returns JSON list of booked dates for a package.
      * Used by the booking form JS to disable already-taken dates.
      * Optional param excludeBookingId lets edit mode ignore its own date.
-     *
      * GET /admin/bookings/booked-dates?packageId=X[&excludeBookingId=Y]
      */
     @GetMapping("/booked-dates")

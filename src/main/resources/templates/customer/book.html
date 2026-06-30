@@ -198,7 +198,7 @@
                     <input type="date" id="eventDate" name="eventDate" required
                            style="font-size:1rem; padding:12px 16px;"
                            onchange="onDateChange(this.value)" />
-                    <span class="date-hint">Already booked dates will be flagged automatically.</span>
+                    <span class="date-hint">Select a future date. Already-booked dates will be flagged automatically.</span>
 
                     <div class="date-blocked-msg" id="dateBlockedMsg">
                         ⛔ <strong>This date is already booked</strong> for this package.
@@ -385,6 +385,16 @@
 var bookedDates   = [];
 var dateIsBlocked = false;
 
+/* Set minimum event date to today */
+(function() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm   = String(today.getMonth() + 1).padStart(2, '0');
+    const dd   = String(today.getDate()).padStart(2, '0');
+    const dateEl = document.getElementById('eventDate');
+    if (dateEl) dateEl.setAttribute('min', yyyy + '-' + mm + '-' + dd);
+})();
+
 /* Fetch booked dates immediately on page load */
 (function () {
     var pkgId = document.getElementById('pkgIdHolder').getAttribute('data-pkg-id');
@@ -497,8 +507,22 @@ function closePaymentModal() {
     document.getElementById('paymentSuccessModal').style.display = 'none';
 }
 
-/* Final guard — prevents submit even if JS was partially bypassed */
+/* Final guard — validates date is selected, not past, and not blocked */
 document.getElementById('bookForm').addEventListener('submit', function (e) {
+    const dateVal = document.getElementById('eventDate').value;
+    if (!dateVal) {
+        e.preventDefault();
+        alert('⚠️ Please select an event date before submitting.');
+        document.getElementById('eventDate').focus();
+        return;
+    }
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (new Date(dateVal) < today) {
+        e.preventDefault();
+        alert('⚠️ Event date cannot be in the past. Please choose a future date.');
+        document.getElementById('eventDate').focus();
+        return;
+    }
     if (dateIsBlocked) {
         e.preventDefault();
         document.getElementById('dateBlockedMsg').scrollIntoView({ behavior: 'smooth' });

@@ -48,6 +48,18 @@ public class BookingService {
     }
 
     public Booking createBooking(Booking booking, Long customerId, Long packageId) {
+        // Validate event date
+        if (booking.getEventDate() == null) {
+            throw new RuntimeException("Event date is required.");
+        }
+        if (booking.getEventDate().isBefore(java.time.LocalDate.now())) {
+            throw new RuntimeException("Event date cannot be in the past.");
+        }
+        // Validate total amount
+        if (booking.getTotalAmount() != null && booking.getTotalAmount().compareTo(java.math.BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("Total amount cannot be negative.");
+        }
+
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
         booking.setCustomer(customer);
@@ -64,6 +76,17 @@ public class BookingService {
     }
 
     public Booking updateBooking(Long id, Booking updatedBooking, Long packageId) {
+        // Validate event date
+        if (updatedBooking.getEventDate() == null) {
+            throw new RuntimeException("Event date is required.");
+        }
+        if (updatedBooking.getEventDate().isBefore(java.time.LocalDate.now())) {
+            throw new RuntimeException("Event date cannot be in the past.");
+        }
+        if (updatedBooking.getTotalAmount() != null && updatedBooking.getTotalAmount().compareTo(java.math.BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("Total amount cannot be negative.");
+        }
+
         Booking existing = bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found: " + id));
         existing.setEventDate(updatedBooking.getEventDate());

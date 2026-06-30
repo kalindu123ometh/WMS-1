@@ -29,29 +29,74 @@ public class ProfileService {
         return Optional.empty();
     }
 
+    private static final java.util.regex.Pattern EMAIL_PATTERN =
+        java.util.regex.Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final java.util.regex.Pattern PHONE_PATTERN =
+        java.util.regex.Pattern.compile("^[+]?[0-9\\s\\-().]{7,20}$");
+
     public Customer addCustomer(Customer customer) {
-        if (customerRepository.existsByEmail(customer.getEmail())) {
+        if (customer.getFirstName() == null || customer.getFirstName().trim().isEmpty()) {
+            throw new RuntimeException("First name is required.");
+        }
+        if (customer.getLastName() == null || customer.getLastName().trim().isEmpty()) {
+            throw new RuntimeException("Last name is required.");
+        }
+        if (customer.getEmail() == null || customer.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email address is required.");
+        }
+        if (!EMAIL_PATTERN.matcher(customer.getEmail().trim()).matches()) {
+            throw new RuntimeException("Please enter a valid email address.");
+        }
+        if (customer.getPassword() == null || customer.getPassword().length() < 6) {
+            throw new RuntimeException("Password must be at least 6 characters.");
+        }
+        if (customer.getPhone() != null && !customer.getPhone().trim().isEmpty()) {
+            if (!PHONE_PATTERN.matcher(customer.getPhone().trim()).matches()) {
+                throw new RuntimeException("Please enter a valid phone number (7-20 digits).");
+            }
+        }
+        if (customerRepository.existsByEmail(customer.getEmail().trim().toLowerCase())) {
             throw new RuntimeException("Email already registered: " + customer.getEmail());
         }
+        customer.setEmail(customer.getEmail().trim().toLowerCase());
         return customerRepository.save(customer);
     }
 
     public Customer updateCustomerProfile(Long id, Customer updatedCustomer) {
         Customer existing = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + id));
-        existing.setFirstName(updatedCustomer.getFirstName());
-        existing.setLastName(updatedCustomer.getLastName());
+
+        if (updatedCustomer.getFirstName() == null || updatedCustomer.getFirstName().trim().isEmpty()) {
+            throw new RuntimeException("First name is required.");
+        }
+        if (updatedCustomer.getLastName() == null || updatedCustomer.getLastName().trim().isEmpty()) {
+            throw new RuntimeException("Last name is required.");
+        }
+        if (updatedCustomer.getPhone() != null && !updatedCustomer.getPhone().trim().isEmpty()) {
+            if (!PHONE_PATTERN.matcher(updatedCustomer.getPhone().trim()).matches()) {
+                throw new RuntimeException("Please enter a valid phone number (7-20 digits).");
+            }
+        }
+
+        existing.setFirstName(updatedCustomer.getFirstName().trim());
+        existing.setLastName(updatedCustomer.getLastName().trim());
         existing.setPhone(updatedCustomer.getPhone());
         existing.setAddress(updatedCustomer.getAddress());
         
-        if (updatedCustomer.getEmail() != null && !updatedCustomer.getEmail().isEmpty() 
-            && !existing.getEmail().equals(updatedCustomer.getEmail())) {
-            if (customerRepository.existsByEmail(updatedCustomer.getEmail())) {
+        if (updatedCustomer.getEmail() != null && !updatedCustomer.getEmail().trim().isEmpty()
+            && !existing.getEmail().equals(updatedCustomer.getEmail().trim().toLowerCase())) {
+            if (!EMAIL_PATTERN.matcher(updatedCustomer.getEmail().trim()).matches()) {
+                throw new RuntimeException("Please enter a valid email address.");
+            }
+            if (customerRepository.existsByEmail(updatedCustomer.getEmail().trim().toLowerCase())) {
                 throw new RuntimeException("Email already registered to another account.");
             }
-            existing.setEmail(updatedCustomer.getEmail());
+            existing.setEmail(updatedCustomer.getEmail().trim().toLowerCase());
         }
         if (updatedCustomer.getPassword() != null && !updatedCustomer.getPassword().isEmpty()) {
+            if (updatedCustomer.getPassword().length() < 6) {
+                throw new RuntimeException("Password must be at least 6 characters.");
+            }
             existing.setPassword(updatedCustomer.getPassword());
         }
         if (updatedCustomer.getProfilePic() != null && !updatedCustomer.getProfilePic().isEmpty()) {

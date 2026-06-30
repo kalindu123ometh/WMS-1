@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <title>Admin Profile – WMS Admin</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .field-error { color:#e74c3c; font-size:0.75rem; margin-top:4px; display:none; font-weight:500; }
+        .field-error.show { display:block; }
+        input.invalid { border-color:#e74c3c !important; background:rgba(231,76,60,0.04) !important; }
+        input.valid   { border-color:#27ae60 !important; }
+    </style>
 </head>
 <body>
 <div class="sidebar">
@@ -84,7 +90,7 @@
                 </p>
             </div>
         </div>
-        <form action="/admin/profile/update" method="post" th:object="${adminUser}" enctype="multipart/form-data">
+        <form action="/admin/profile/update" method="post" th:object="${adminUser}" enctype="multipart/form-data" id="adminProfileForm" novalidate>
             <input type="file" id="adminProfilePic" name="profilePicFile" accept="image/*" style="display:none;">
             <div class="form-grid">
                 <div class="form-group">
@@ -92,20 +98,35 @@
                     <input type="text" name="fullName" th:value="${adminUser?.fullName}" placeholder="Your full name">
                 </div>
                 <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" name="username" th:value="${adminUser?.username}" placeholder="Username" required>
+                    <label>Username *</label>
+                    <input type="text" name="username" id="adminUsername" th:value="${adminUser?.username}" placeholder="Username"
+                           oninput="validateUsername()">
+                    <div class="field-error" id="usernameErr">Username must be at least 3 characters.</div>
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" th:value="${adminUser?.email}" placeholder="Email address" required>
+                    <label>Email *</label>
+                    <input type="email" name="email" id="adminEmail" th:value="${adminUser?.email}" placeholder="Email address"
+                           oninput="validateEmail()">
+                    <div class="field-error" id="emailErr">Please enter a valid email address.</div>
                 </div>
                 <div class="form-group">
                     <label>Phone</label>
-                    <input type="tel" name="phone" th:value="${adminUser?.phone}" placeholder="Phone number">
+                    <input type="tel" name="phone" id="adminPhone" th:value="${adminUser?.phone}" placeholder="Phone number"
+                           oninput="validatePhone()">
+                    <div class="field-error" id="phoneErr">Please enter a valid phone number (7–20 digits).</div>
                 </div>
                 <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" name="password" placeholder="Leave blank to keep current">
+                    <label>New Password <span style="font-weight:400;font-size:0.8rem;color:#999;">(leave blank to keep current)</span></label>
+                    <div style="position:relative;">
+                        <input type="password" name="password" id="adminPassword"
+                               placeholder="Leave blank to keep current" oninput="validatePassword()"
+                               style="padding-right:44px;">
+                        <button type="button" onclick="togglePw()" tabindex="-1"
+                                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#aaa;">
+                            <span id="pwEye">👁️</span>
+                        </button>
+                    </div>
+                    <div class="field-error" id="passwordErr">Password must be at least 6 characters.</div>
                 </div>
                 <div class="form-group">
                     <label>Role</label>
@@ -118,5 +139,46 @@
         </form>
     </div>
 </div>
+
+<script>
+const EMAIL_RE = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const PHONE_RE = /^[+]?[0-9\s\-().]{7,20}$/;
+function showErr(id){ document.getElementById(id).classList.add('show'); }
+function hideErr(id){ document.getElementById(id).classList.remove('show'); }
+function markInvalid(id){ const el=document.getElementById(id); if(el){el.classList.remove('valid');el.classList.add('invalid');} }
+function markValid(id)  { const el=document.getElementById(id); if(el){el.classList.remove('invalid');el.classList.add('valid');} }
+function validateUsername(){
+    const v=document.getElementById('adminUsername').value.trim();
+    if(v.length<3){markInvalid('adminUsername');showErr('usernameErr');}else{markValid('adminUsername');hideErr('usernameErr');}
+}
+function validateEmail(){
+    const v=document.getElementById('adminEmail').value.trim();
+    if(!v||!EMAIL_RE.test(v)){markInvalid('adminEmail');showErr('emailErr');}else{markValid('adminEmail');hideErr('emailErr');}
+}
+function validatePhone(){
+    const v=document.getElementById('adminPhone').value.trim();
+    if(v&&!PHONE_RE.test(v)){markInvalid('adminPhone');showErr('phoneErr');}else{markValid('adminPhone');hideErr('phoneErr');}
+}
+function validatePassword(){
+    const v=document.getElementById('adminPassword').value;
+    if(v&&v.length<6){markInvalid('adminPassword');showErr('passwordErr');}else{markValid('adminPassword');hideErr('passwordErr');}
+}
+function togglePw(){
+    const inp=document.getElementById('adminPassword'),eye=document.getElementById('pwEye');
+    if(inp.type==='password'){inp.type='text';eye.textContent='🙈';}else{inp.type='password';eye.textContent='👁️';}
+}
+document.getElementById('adminProfileForm').addEventListener('submit',function(e){
+    let ok=true;
+    const u=document.getElementById('adminUsername').value.trim();
+    if(u.length<3){markInvalid('adminUsername');showErr('usernameErr');ok=false;}
+    const em=document.getElementById('adminEmail').value.trim();
+    if(!em||!EMAIL_RE.test(em)){markInvalid('adminEmail');showErr('emailErr');ok=false;}
+    const ph=document.getElementById('adminPhone').value.trim();
+    if(ph&&!PHONE_RE.test(ph)){markInvalid('adminPhone');showErr('phoneErr');ok=false;}
+    const pw=document.getElementById('adminPassword').value;
+    if(pw&&pw.length<6){markInvalid('adminPassword');showErr('passwordErr');ok=false;}
+    if(!ok)e.preventDefault();
+});
+</script>
 </body>
 </html>

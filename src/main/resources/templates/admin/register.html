@@ -15,6 +15,17 @@
         .login-card h2 { text-align: center; animation: titleGlow 2s ease-in-out infinite alternate; }
         .login-card p  { text-align: center; }
         .login-card { max-width: 560px; }
+        .field-error { color:#e74c3c; font-size:0.75rem; margin-top:4px; display:none; font-weight:500; }
+        .field-error.show { display:block; }
+        .field-ok    { color:#27ae60; font-size:0.75rem; margin-top:4px; display:none; font-weight:500; }
+        .field-ok.show { display:block; }
+        input.invalid { border-color:#e74c3c !important; background:rgba(231,76,60,0.06) !important; }
+        input.valid   { border-color:#27ae60 !important; }
+        .pw-strength-bar { height:4px; border-radius:4px; background:#e8e0ee; overflow:hidden; margin-top:8px; display:none; }
+        .pw-strength-fill { height:100%; border-radius:4px; transition:width 0.35s, background 0.35s; width:0%; }
+        .pw-strength-meta { display:flex; justify-content:space-between; margin-top:5px; display:none; }
+        .pw-strength-label { font-size:0.78rem; font-weight:600; }
+        .pw-strength-tips  { font-size:0.72rem; color:#aaa; }
     </style>
 </head>
 <body>
@@ -42,30 +53,66 @@
             <span>⚠️</span><span th:text="${errorMsg}"></span>
         </div>
 
-        <form action="/admin/register" method="post" style="margin-top:18px;">
+        <form action="/admin/register" method="post" style="margin-top:18px;" id="adminRegForm" novalidate>
 
             <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:14px; display:grid; margin-bottom:14px;">
                 <div class="form-group">
                     <label>Full Name *</label>
-                    <input type="text" name="fullName" placeholder="John Smith" required>
+                    <input type="text" name="fullName" id="fullName" placeholder="John Smith"
+                           oninput="validateRequired('fullName','fullNameErr')">
+                    <div class="field-error" id="fullNameErr">Full name is required.</div>
                 </div>
                 <div class="form-group">
-                    <label>Username *</label>
-                    <input type="text" name="username" placeholder="john_admin" required>
+                    <label>Username * <span style="font-weight:400;font-size:0.75rem;color:#aaa;">(min 3 chars)</span></label>
+                    <input type="text" name="username" id="username" placeholder="john_admin"
+                           oninput="validateUsername()">
+                    <div class="field-error" id="usernameErr">Username must be at least 3 characters.</div>
                 </div>
                 <div class="form-group">
                     <label>Email *</label>
-                    <input type="email" name="email" placeholder="john@example.com" required>
+                    <input type="email" name="email" id="email" placeholder="john@example.com"
+                           oninput="validateEmail()">
+                    <div class="field-error" id="emailErr">Please enter a valid email address.</div>
                 </div>
                 <div class="form-group">
                     <label>Phone</label>
-                    <input type="tel" name="phone" placeholder="+94 77 123 4567">
+                    <input type="tel" name="phone" id="phone" placeholder="+94 77 123 4567"
+                           oninput="validatePhone()">
+                    <div class="field-error" id="phoneErr">Please enter a valid phone number (7–20 digits).</div>
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom:22px;">
-                <label>Password *</label>
-                <input type="password" name="password" placeholder="Choose a strong password" required>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:14px; display:grid; margin-bottom:14px;">
+                <div class="form-group">
+                    <label>Password * <span style="font-weight:400;font-size:0.75rem;color:#aaa;">(min 6 chars)</span></label>
+                    <div style="position:relative;">
+                        <input type="password" name="password" id="password" placeholder="Choose a strong password"
+                               oninput="checkPwStrength(this.value)" style="padding-right:44px;">
+                        <button type="button" onclick="togglePw('password','pwEye')" tabindex="-1"
+                                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#aaa;">
+                            <span id="pwEye">👁️</span>
+                        </button>
+                    </div>
+                    <div class="pw-strength-bar" id="pwBar"><div class="pw-strength-fill" id="pwFill"></div></div>
+                    <div class="pw-strength-meta" id="pwMeta">
+                        <span class="pw-strength-label" id="pwLabel"></span>
+                        <span class="pw-strength-tips"  id="pwTips"></span>
+                    </div>
+                    <div class="field-error" id="passwordErr">Password must be at least 6 characters.</div>
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password *</label>
+                    <div style="position:relative;">
+                        <input type="password" id="confirmPassword" placeholder="Repeat password"
+                               oninput="validateConfirm()" style="padding-right:44px;">
+                        <button type="button" onclick="togglePw('confirmPassword','cpEye')" tabindex="-1"
+                                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#aaa;">
+                            <span id="cpEye">👁️</span>
+                        </button>
+                    </div>
+                    <div class="field-error" id="confirmErr">Passwords do not match.</div>
+                    <div class="field-ok"    id="confirmOk">✔ Passwords match!</div>
+                </div>
             </div>
 
             <button type="submit" class="btn" style="width:100%; justify-content:center;">📤 Submit Registration Request</button>
@@ -79,5 +126,83 @@
         </div>
     </div>
 </div>
+
+<script>
+const EMAIL_RE = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const PHONE_RE = /^[+]?[0-9\s\-().]{7,20}$/;
+
+function showErr(id) { document.getElementById(id).classList.add('show'); }
+function hideErr(id) { document.getElementById(id).classList.remove('show'); }
+function showOk(id)  { document.getElementById(id).classList.add('show'); }
+function hideOk(id)  { document.getElementById(id).classList.remove('show'); }
+function markInvalid(id) { const el=document.getElementById(id); if(el){el.classList.remove('valid'); el.classList.add('invalid');} }
+function markValid(id)   { const el=document.getElementById(id); if(el){el.classList.remove('invalid'); el.classList.add('valid');} }
+
+function validateRequired(inputId, errId) {
+    const v = document.getElementById(inputId).value.trim();
+    if (!v) { markInvalid(inputId); showErr(errId); }
+    else    { markValid(inputId);   hideErr(errId); }
+}
+function validateUsername() {
+    const v = document.getElementById('username').value.trim();
+    if (v.length < 3) { markInvalid('username'); showErr('usernameErr'); }
+    else              { markValid('username');   hideErr('usernameErr'); }
+}
+function validateEmail() {
+    const v = document.getElementById('email').value.trim();
+    if (!v || !EMAIL_RE.test(v)) { markInvalid('email'); showErr('emailErr'); }
+    else                         { markValid('email');   hideErr('emailErr'); }
+}
+function validatePhone() {
+    const v = document.getElementById('phone').value.trim();
+    if (v && !PHONE_RE.test(v)) { markInvalid('phone'); showErr('phoneErr'); }
+    else                        { markValid('phone');   hideErr('phoneErr'); }
+}
+function togglePw(inputId, eyeId) {
+    const inp = document.getElementById(inputId), eye = document.getElementById(eyeId);
+    if (inp.type === 'password') { inp.type='text'; eye.textContent='🙈'; }
+    else                         { inp.type='password'; eye.textContent='👁️'; }
+}
+function checkPwStrength(pwd) {
+    const bar=document.getElementById('pwBar'), fill=document.getElementById('pwFill'),
+          lbl=document.getElementById('pwLabel'), tips=document.getElementById('pwTips'),
+          meta=document.getElementById('pwMeta');
+    if (!pwd) { bar.style.display='none'; meta.style.display='none'; hideErr('passwordErr'); return; }
+    bar.style.display='block'; meta.style.display='flex';
+    if (pwd.length < 6) { markInvalid('password'); showErr('passwordErr'); }
+    else                { markValid('password');   hideErr('passwordErr'); }
+    let s=0; const missing=[];
+    if (pwd.length>=8) s++; else missing.push('8+ chars');
+    if (/[A-Z]/.test(pwd)) s++; else missing.push('uppercase');
+    if (/[a-z]/.test(pwd)) s++; else missing.push('lowercase');
+    if (/[0-9]/.test(pwd)) s++; else missing.push('number');
+    if (/[^A-Za-z0-9]/.test(pwd)) s++; else missing.push('symbol');
+    const lvls=[{w:'20%',bg:'#e74c3c',t:'Weak'},{w:'40%',bg:'#e67e22',t:'Fair'},{w:'60%',bg:'#f1c40f',t:'Good'},{w:'80%',bg:'#2ecc71',t:'Strong'},{w:'100%',bg:'#1abc9c',t:'Very Strong'}];
+    const lvl=lvls[Math.max(s-1,0)];
+    fill.style.width=lvl.w; fill.style.background=lvl.bg; lbl.textContent=lvl.t; lbl.style.color=lvl.bg;
+    tips.textContent = missing.length ? 'Add: '+missing.join(', ') : '✔ Great password!';
+    validateConfirm();
+}
+function validateConfirm() {
+    const p=document.getElementById('password').value, c=document.getElementById('confirmPassword').value;
+    if (!c) { hideErr('confirmErr'); hideOk('confirmOk'); return; }
+    if (p !== c) { markInvalid('confirmPassword'); showErr('confirmErr'); hideOk('confirmOk'); }
+    else         { markValid('confirmPassword');   hideErr('confirmErr'); showOk('confirmOk'); }
+}
+
+document.getElementById('adminRegForm').addEventListener('submit', function(e) {
+    let ok = true;
+    if (!document.getElementById('fullName').value.trim())  { markInvalid('fullName');        showErr('fullNameErr');  ok=false; }
+    if (document.getElementById('username').value.trim().length < 3) { markInvalid('username'); showErr('usernameErr'); ok=false; }
+    if (!EMAIL_RE.test(document.getElementById('email').value.trim())) { markInvalid('email'); showErr('emailErr'); ok=false; }
+    const phone = document.getElementById('phone').value.trim();
+    if (phone && !PHONE_RE.test(phone)) { markInvalid('phone'); showErr('phoneErr'); ok=false; }
+    const pwd = document.getElementById('password').value;
+    if (!pwd || pwd.length < 6) { markInvalid('password'); showErr('passwordErr'); ok=false; }
+    const cpwd = document.getElementById('confirmPassword').value;
+    if (!cpwd || pwd !== cpwd) { markInvalid('confirmPassword'); showErr('confirmErr'); hideOk('confirmOk'); ok=false; }
+    if (!ok) e.preventDefault();
+});
+</script>
 </body>
 </html>

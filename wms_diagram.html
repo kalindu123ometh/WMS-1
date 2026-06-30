@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WMS Project Diagram</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; padding: 30px; }
+  h1 { text-align: center; font-size: 2rem; color: #f5c518; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #aaa; margin-bottom: 30px; font-size: 0.95rem; }
+  h2 { font-size: 1.1rem; color: #f5c518; margin-bottom: 14px; border-left: 4px solid #f5c518; padding-left: 10px; }
+  .section { background: #1a1d27; border-radius: 12px; padding: 22px; margin-bottom: 24px; border: 1px solid #2a2d3a; }
+
+  /* ARCH */
+  .arch { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
+  .arch-box { background: #252836; border: 2px solid #f5c518; border-radius: 10px; padding: 14px 18px; text-align: center; min-width: 130px; }
+  .arch-box .icon { font-size: 1.8rem; }
+  .arch-box .label { font-size: 0.78rem; color: #f5c518; font-weight: 700; margin-top: 4px; }
+  .arch-box .sub { font-size: 0.68rem; color: #aaa; margin-top: 3px; }
+  .arrow { font-size: 1.5rem; color: #f5c518; padding: 0 8px; }
+
+  /* LAYERS */
+  .layers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .layer { background: #252836; border-radius: 10px; padding: 14px; border-top: 3px solid; }
+  .layer.ctrl { border-color: #e74c3c; }
+  .layer.svc  { border-color: #3498db; }
+  .layer.repo { border-color: #2ecc71; }
+  .layer.ent  { border-color: #9b59b6; }
+  .layer h3 { font-size: 0.82rem; margin-bottom: 10px; }
+  .layer.ctrl h3 { color: #e74c3c; }
+  .layer.svc  h3 { color: #3498db; }
+  .layer.repo h3 { color: #2ecc71; }
+  .layer.ent  h3 { color: #9b59b6; }
+  .layer ul { list-style: none; }
+  .layer ul li { font-size: 0.72rem; color: #ccc; padding: 3px 0; border-bottom: 1px solid #2a2d3a; }
+  .layer ul li:last-child { border: none; }
+
+  /* ERD */
+  .erd { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .entity { background: #252836; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+  .entity-head { padding: 8px 12px; font-size: 0.8rem; font-weight: 700; }
+  .entity-body { padding: 8px 12px; }
+  .entity-body .field { font-size: 0.68rem; color: #bbb; padding: 2px 0; display: flex; gap: 6px; }
+  .field .pk { color: #f5c518; font-weight: 700; }
+  .field .fk { color: #3498db; }
+  .field .type { color: #888; }
+
+  .e-user   .entity-head { background: #c0392b; }
+  .e-cust   .entity-head { background: #8e44ad; }
+  .e-pkg    .entity-head { background: #27ae60; }
+  .e-book   .entity-head { background: #2980b9; }
+  .e-pay    .entity-head { background: #e67e22; }
+  .e-vend   .entity-head { background: #16a085; }
+  .e-rep    .entity-head { background: #d35400; }
+  .e-adm    .entity-head { background: #7f8c8d; }
+
+  /* ROUTES */
+  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  th { background: #252836; color: #f5c518; padding: 9px 12px; text-align: left; }
+  td { padding: 8px 12px; border-bottom: 1px solid #2a2d3a; color: #ccc; }
+  tr:hover td { background: #1e2130; }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; margin-right: 3px; }
+  .get  { background: #1a6b3a; color: #2ecc71; }
+  .post { background: #6b3a1a; color: #e67e22; }
+
+  /* FLOW */
+  .flow { display: flex; flex-direction: column; gap: 10px; }
+  .flow-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .flow-node { background: #252836; border: 1px solid #444; border-radius: 8px; padding: 8px 14px; font-size: 0.75rem; white-space: nowrap; }
+  .flow-arrow { color: #f5c518; font-size: 1.1rem; }
+  .flow-label { font-size: 0.68rem; color: #888; }
+
+  /* TECH */
+  .tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tech-card { background: #252836; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; border: 1px solid #333; }
+  .tech-icon { font-size: 1.5rem; }
+  .tech-name { font-size: 0.78rem; font-weight: 700; color: #f5c518; }
+  .tech-ver  { font-size: 0.68rem; color: #888; }
+
+  @media(max-width:900px){
+    .layers, .erd, .tech-grid { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<h1>🎊 Wedding Management System</h1>
+<p class="subtitle">Spring Boot 3.2.3 · Java 17 · Thymeleaf · Spring Data JPA · MySQL · OpenPDF</p>
+
+<!-- 1. Architecture -->
+<div class="section">
+  <h2>① System Architecture</h2>
+  <div class="arch">
+    <div class="arch-box">
+      <div class="icon">🌐</div>
+      <div class="label">Browser</div>
+      <div class="sub">HTML / Thymeleaf</div>
+    </div>
+    <div class="arrow">⟷</div>
+    <div class="arch-box">
+      <div class="icon">🎮</div>
+      <div class="label">Controllers</div>
+      <div class="sub">Spring MVC</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="arch-box">
+      <div class="icon">⚙️</div>
+      <div class="label">Services</div>
+      <div class="sub">Business Logic</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="arch-box">
+      <div class="icon">🗃️</div>
+      <div class="label">Repositories</div>
+      <div class="sub">Spring Data JPA</div>
+    </div>
+    <div class="arrow">⟷</div>
+    <div class="arch-box">
+      <div class="icon">🗄️</div>
+      <div class="label">MySQL DB</div>
+      <div class="sub">8 Tables</div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Layers -->
+<div class="section">
+  <h2>② Application Layers</h2>
+  <div class="layers">
+    <div class="layer ctrl">
+      <h3>🎮 Controllers</h3>
+      <ul>
+        <li>HomeController</li>
+        <li>UserController</li>
+        <li>AdminRegistrationController</li>
+        <li>PackageController</li>
+        <li>BookingController</li>
+        <li>VendorController</li>
+        <li>ReportController</li>
+        <li>ProfileController</li>
+      </ul>
+    </div>
+    <div class="layer svc">
+      <h3>⚙️ Services</h3>
+      <ul>
+        <li>UserService</li>
+        <li>AdminRegistrationService</li>
+        <li>PackageService</li>
+        <li>BookingService</li>
+        <li>VendorService</li>
+        <li>ReportService</li>
+        <li>ProfileService</li>
+        <li>PdfService</li>
+      </ul>
+    </div>
+    <div class="layer repo">
+      <h3>🗃️ Repositories</h3>
+      <ul>
+        <li>UserRepository</li>
+        <li>CustomerRepository</li>
+        <li>AdminRegRequestRepository</li>
+        <li>PackageRepository</li>
+        <li>BookingRepository</li>
+        <li>VendorRepository</li>
+        <li>PaymentRepository</li>
+        <li>ReportRepository</li>
+      </ul>
+    </div>
+    <div class="layer ent">
+      <h3>🏗️ Entities</h3>
+      <ul>
+        <li>User</li>
+        <li>Customer</li>
+        <li>AdminRegistrationRequest</li>
+        <li>WeddingPackage</li>
+        <li>Booking</li>
+        <li>Payment</li>
+        <li>Vendor</li>
+        <li>Report</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 3. ERD -->
+<div class="section">
+  <h2>③ Entity Relationship Diagram</h2>
+  <div class="erd">
+
+    <div class="entity e-user">
+      <div class="entity-head">👤 User</div>
+      <div class="entity-body">
+        <div class="field"><span class="pk">PK</span> id</div>
+        <div class="field">username <span class="type">(unique)</span></div>
+        <div class="field">email <span class="type">(unique)</span></div>
+        <div class="field">password</div>
+        <div class="field">role <span class="type">USER|ADMIN</span></div>
+        <div class="field">fullName, phone</div>
+        <div class="field">active, createdAt</div>
+      </div>
+    </div>
+
+    <div class="entity e-cust">
+      <div class="entity-head">🙋 Customer</div>
+      <div class="entity-body">
+        <div class="field"><span class="pk">PK</span> id</div>
+        <div class="field"><span class="fk">FK</span> user_id → User</div>
+        <div class="field">firstName, lastName</div>
+        <div class="field">email, phone</div>
+        <div class="field">address</div>
+        <div class="field">password</div>
+        <div class="field">active, createdAt</div>
+      </div>
+    </div>
+
+    <div class="entity e-pkg">
+      <div class="entity-head">💍 WeddingPackage</div>
+      <div class="entity-body">
+        <div class="field"><span class="pk">PK</span> id</div>
+        <div class="field">name, description</div>
+        <div class="field">price, duration</div>
+        <div class="field">location</div>
+        <div class="field">inclusions</div>
+        <div class="field">maxGuests</div>
+        <div class="field">status <span class="type">Available|Not</span></div>
+      </div>
+    </div>
+
+    <div class="entity e-book">
+      <div class="entity-head">📅 Booking</div>
+      <div class="entity-body">
+        <div class="field"><span class="pk">PK</span> id</div>
+        <div class="field"><span class="fk">FK</span> customer_id → Customer</div>
+        <div class="field"><span class="fk">FK</span> package_id → Package</div>
+        <div class="field">eventDate, venue</div>
+        <div class="field">totalAmount, guestCount</div>
+        <div class="field">status <span class="type">Pending|Confirmed...</span></div>
+        <div class="field">paymentMethod, paymentStatus</div>
+      </div>
+    </div>
+
+    <div class="entity e-pay">
+      <div class="entity-head">💳 Payment</div>
+      <div class="entity-body">
+        <div class="field"><span class="pk">PK</span> id</div>
+        <div class="field"><span class="fk">FK</span> booking_id → Booking</div>
+        <div class="field">amount</div>
+        <div class="field">paymentMethod</div>
+        <div class="field">transactionId</div>
+        <div class="field">paymentDate</div>
+      </div>
+    </div>
+
+    <div class="entity e-vend">
+      <div class="entity-head">🏪 Vendor</div>
+      <div class="entity-body">
+        <div class="field"><span class="pk">PK</span> id</div>
+        <div class="field">name</div>
+        <div class="field">category <span class="type">Photography...</span></div>
+        <div class="field">email, phone</div>
+        <div class="field">pricingTier <span class="type">Standard|Premium</span></div>
+        <div class="field">status <span class="type">Active|Inactive</span></div>
+        <div class="field">registeredAt</div>
+      </div>
+    </div>
+
+    <div class="entity e-rep">
+      <div class="entity-head">📊 Report</div>
+      <div class="entity-body">
+        <div class="field"><span class="pk">PK</span> id</div>
+        <div class="field">title</div>
+        <div class="field">type <span class="type">Booking|Revenue...</span></div>
+        <div class="field">content</div>
+        <div class="field">generatedBy</div>
+        <div class="field">generatedDate</div>
+      </div>
+    </div>
+
+    <div class="entity e-adm">
+      <div class="entity-head">📝 AdminRegRequest</div>
+      <div class="entity-body">
+        <div class="field"><span class="pk">PK</span> id</div>
+        <div class="field">username, email</div>
+        <div class="field">password</div>
+        <div class="field">status <span class="type">Pending|Approved</span></div>
+        <div class="field">requestedAt</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Relationship Legend -->
+  <div style="margin-top:16px; display:flex; gap:20px; flex-wrap:wrap; font-size:0.75rem; color:#aaa;">
+    <span>🔗 Customer <strong style="color:#3498db">1</strong> → <strong style="color:#3498db">Many</strong> Booking</span>
+    <span>🔗 WeddingPackage <strong style="color:#3498db">1</strong> → <strong style="color:#3498db">Many</strong> Booking</span>
+    <span>🔗 Booking <strong style="color:#3498db">1</strong> → <strong style="color:#3498db">Many</strong> Payment</span>
+    <span>🔗 User <strong style="color:#3498db">1</strong> → <strong style="color:#3498db">1</strong> Customer</span>
+  </div>
+</div>
+
+<!-- 4. Routes -->
+<div class="section">
+  <h2>④ Controller Route Map</h2>
+  <table>
+    <tr>
+      <th>Controller</th>
+      <th>Base Route</th>
+      <th>Key Endpoints</th>
+    </tr>
+    <tr>
+      <td>HomeController</td>
+      <td>/</td>
+      <td><span class="badge get">GET</span>/ &nbsp;<span class="badge get">GET</span>/login &nbsp;<span class="badge post">POST</span>/login &nbsp;<span class="badge get">GET</span>/logout</td>
+    </tr>
+    <tr>
+      <td>UserController</td>
+      <td>/admin/users</td>
+      <td><span class="badge get">GET</span>/ &nbsp;<span class="badge get">GET</span>/new &nbsp;<span class="badge post">POST</span>/save &nbsp;<span class="badge post">POST</span>/delete/{id}</td>
+    </tr>
+    <tr>
+      <td>AdminRegistrationController</td>
+      <td>/admin/register</td>
+      <td><span class="badge get">GET</span>/ &nbsp;<span class="badge post">POST</span>/ &nbsp;<span class="badge post">POST</span>/approve/{id} &nbsp;<span class="badge post">POST</span>/reject/{id}</td>
+    </tr>
+    <tr>
+      <td>PackageController</td>
+      <td>/admin/packages</td>
+      <td><span class="badge get">GET</span>/ &nbsp;<span class="badge get">GET</span>/new &nbsp;<span class="badge post">POST</span>/save &nbsp;<span class="badge post">POST</span>/delete/{id}</td>
+    </tr>
+    <tr>
+      <td>BookingController</td>
+      <td>/admin/bookings, /customer/book</td>
+      <td><span class="badge get">GET</span>/ &nbsp;<span class="badge post">POST</span>/save &nbsp;<span class="badge post">POST</span>/status/{id} &nbsp;<span class="badge post">POST</span>/pay/{id}</td>
+    </tr>
+    <tr>
+      <td>VendorController</td>
+      <td>/admin/vendors</td>
+      <td><span class="badge get">GET</span>/ &nbsp;<span class="badge get">GET</span>/new &nbsp;<span class="badge post">POST</span>/save &nbsp;<span class="badge post">POST</span>/delete/{id}</td>
+    </tr>
+    <tr>
+      <td>ReportController</td>
+      <td>/admin/reports</td>
+      <td><span class="badge get">GET</span>/ &nbsp;<span class="badge post">POST</span>/generate &nbsp;<span class="badge get">GET</span>/view/{id} &nbsp;<span class="badge get">GET</span>/download/{id} (PDF)</td>
+    </tr>
+    <tr>
+      <td>ProfileController</td>
+      <td>/profile</td>
+      <td><span class="badge get">GET</span>/ &nbsp;<span class="badge post">POST</span>/update</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 5. Flow -->
+<div class="section">
+  <h2>⑤ User Flow</h2>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node">🌐 Landing Page</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">🙋 Customer Login/Register</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">🏠 Customer Dashboard</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">💍 Browse Packages</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">📅 Make Booking</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">💳 Payment</div>
+    </div>
+    <div class="flow-row">
+      <div class="flow-node">🌐 Landing Page</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">🔐 Admin Login</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">📊 Admin Dashboard</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" style="color:#f5c518">Manage: Users · Packages · Vendors · Bookings · Reports</div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. Tech Stack -->
+<div class="section">
+  <h2>⑥ Technology Stack</h2>
+  <div class="tech-grid">
+    <div class="tech-card"><span class="tech-icon">☕</span><div><div class="tech-name">Java 17</div><div class="tech-ver">Language</div></div></div>
+    <div class="tech-card"><span class="tech-icon">🌱</span><div><div class="tech-name">Spring Boot 3.2.3</div><div class="tech-ver">Framework</div></div></div>
+    <div class="tech-card"><span class="tech-icon">🍃</span><div><div class="tech-name">Thymeleaf</div><div class="tech-ver">Server-side Templating</div></div></div>
+    <div class="tech-card"><span class="tech-icon">🗃️</span><div><div class="tech-name">Spring Data JPA</div><div class="tech-ver">ORM / Hibernate</div></div></div>
+    <div class="tech-card"><span class="tech-icon">🐬</span><div><div class="tech-name">MySQL</div><div class="tech-ver">Relational Database</div></div></div>
+    <div class="tech-card"><span class="tech-icon">📄</span><div><div class="tech-name">OpenPDF 1.3.30</div><div class="tech-ver">PDF Report Generation</div></div></div>
+    <div class="tech-card"><span class="tech-icon">🔨</span><div><div class="tech-name">Maven</div><div class="tech-ver">Build Tool</div></div></div>
+    <div class="tech-card"><span class="tech-icon">🔄</span><div><div class="tech-name">Spring DevTools</div><div class="tech-ver">Hot Reload</div></div></div>
+    <div class="tech-card"><span class="tech-icon">📈</span><div><div class="tech-name">Spring Actuator</div><div class="tech-ver">Health & Metrics</div></div></div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class VendorService {
@@ -21,11 +22,37 @@ public class VendorService {
         return vendorRepository.findById(id);
     }
 
+    private static final Pattern EMAIL_PATTERN =
+        Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern PHONE_PATTERN =
+        Pattern.compile("^[+]?[0-9\\s\\-().]{7,20}$");
+
+    private void validateVendor(Vendor vendor) {
+        if (vendor.getName() == null || vendor.getName().trim().isEmpty()) {
+            throw new RuntimeException("Vendor name is required.");
+        }
+        if (vendor.getCategory() == null || vendor.getCategory().trim().isEmpty()) {
+            throw new RuntimeException("Vendor category is required.");
+        }
+        if (vendor.getEmail() != null && !vendor.getEmail().trim().isEmpty()) {
+            if (!EMAIL_PATTERN.matcher(vendor.getEmail().trim()).matches()) {
+                throw new RuntimeException("Please enter a valid email address.");
+            }
+        }
+        if (vendor.getPhone() != null && !vendor.getPhone().trim().isEmpty()) {
+            if (!PHONE_PATTERN.matcher(vendor.getPhone().trim()).matches()) {
+                throw new RuntimeException("Please enter a valid phone number (7-20 digits).");
+            }
+        }
+    }
+
     public Vendor addVendor(Vendor vendor) {
+        validateVendor(vendor);
         return vendorRepository.save(vendor);
     }
 
     public Vendor updateVendor(Long id, Vendor updatedVendor) {
+        validateVendor(updatedVendor);
         Vendor existing = vendorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vendor not found with id: " + id));
         existing.setName(updatedVendor.getName());
